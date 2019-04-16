@@ -83,3 +83,10 @@ class LiveDataLoader():
             normalised_window = np.array(normalised_window).T # reshape and transpose array back into original multidimensional format
             normalised_data.append(normalised_window)
         return np.array(normalised_data)
+
+    def denormailise_prediction(self, prediction_p):
+        prediction_array = []
+        for i in range(prediction_p.size):
+            prediction_actual = self.data_test[i][0] * (1 + float(prediction_p[i]))
+            prediction_array.append(prediction_actual)
+        return np.array(prediction_array)
