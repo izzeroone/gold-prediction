@@ -5,7 +5,6 @@ import numpy as np
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.layers import Dense, Dropout, LSTM
 from keras.models import Sequential, load_model
-from keras.utils.vis_utils import plot_model
 from numpy import newaxis
 
 from core.utils import Timer
@@ -31,7 +30,6 @@ class Model():
         self.model.add(Dropout(rate=0.2))
         self.model.add(Dense(1, activation='linear'))
         self.model.compile(loss='mse', optimizer='adam')
-        plot_model(model=self.model, show_layer_names=True, show_shapes=True, to_file="model.png")
         print('[Model] Model Compiled')
         timer.stop()
 

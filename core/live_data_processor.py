@@ -5,7 +5,8 @@ import pandas as pd
 class LiveDataLoader():
     """A class for loading and transforming data for the lstm model"""
 
-    def __init__(self, dataframe, split, cols):
+    def __init__(self, split, cols, filename="", dataframe=None):
+        dataframe = pd.read_csv(filename) if filename else dataframe
         i_split = int(len(dataframe) * split)
         self.data_train = dataframe.get(cols).values[:i_split]
         self.data_test  = dataframe.get(cols).values[i_split:]
