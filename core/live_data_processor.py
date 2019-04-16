@@ -9,7 +9,9 @@ class LiveDataLoader():
         dataframe = pd.read_csv(filename) if filename else dataframe
         i_split = int(len(dataframe) * split)
         self.data_train = dataframe.get(cols).values[:i_split]
+        self.data_train_date = dataframe.get(["Date"]).values[:i_split, -1]
         self.data_test  = dataframe.get(cols).values[i_split:]
+        self.data_test_date = dataframe.get(["Date"]).values[i_split:, -1]
         self.len_train  = len(self.data_train)
         self.len_test   = len(self.data_test)
         self.len_train_windows = None
@@ -85,9 +87,28 @@ class LiveDataLoader():
             normalised_data.append(normalised_window)
         return np.array(normalised_data)
 
-    def denormailise_prediction(self, prediction_p):
+    def denormailise_prediction(self, seq_len, prediction_p):
+        x_test_data, _ = self.get_test_data(seq_len, False)
+        x_test_data = x_test_data[:, 0, 0]
         prediction_array = []
         for i in range(prediction_p.size):
-            prediction_actual = self.data_test[i][0] * (1 + float(prediction_p[i]))
+            prediction_actual = x_test_data[i] * (1 + float(prediction_p[i]))
             prediction_array.append(prediction_actual)
         return np.array(prediction_array)
+
+    def get_test_date(self, seq_len):
+        return self.data_test_date[seq_len - 1:self.len_test - 1]
+
+    def get_last_data(self, seq_len, normalise):
+        '''
+        Create x, y test data windows
+        Warning: batch method, not generative, make sure you have enough memory to
+        load data, otherwise reduce size of the training split.
+        '''
+        data_windows = []
+        data_windows.append(self.data_test[self.len_test - seq_len:self.len_test])
+
+        data_windows = np.array(data_windows).astype(float)
+
+        x = data_windows[:, :]
+        return x
