@@ -1,14 +1,11 @@
-__author__ = "Jakob Aungiers"
-__copyright__ = "Jakob Aungiers 2018"
-__version__ = "2.0.0"
-__license__ = "MIT"
 
 import os
 import json
 import time
 import math
 import matplotlib.pyplot as plt
-from core.data_processor import DataLoader
+import fix_yahoo_finance as yf
+from core.live_data_processor import LiveDataLoader
 from core.model import Model
 
 
@@ -20,35 +17,21 @@ def plot_results(predicted_data, true_data):
     plt.legend()
     plt.show()
 
+if __name__ == '__main__':
+    #  Setting pyplot fig size
+    plt.rcParams['figure.figsize'] = [10, 8]
+    # Download gold price from yahoo finance
+    gld_dataframe = yf.download(tickers="GLD", start="2000-1-1")
 
-def plot_results_multiple(predicted_data, true_data, prediction_len):
-    fig = plt.figure(facecolor='white')
-    ax = fig.add_subplot(111)
-    ax.plot(true_data, label='True Data')
-	# Pad the list of predictions to shift it in the graph to it's correct start
-    for i, data in enumerate(predicted_data):
-        padding = [None for p in range(i * prediction_len)]
-        plt.plot(padding + data, label='Prediction')
-        plt.legend()
-    plt.show()
-
-
-def main():
-    configs = json.load(open('config.json', 'r'))
-    if not os.path.exists(configs['model']['save_dir']): os.makedirs(configs['model']['save_dir'])
-
-    data = DataLoader(
-        os.path.join('data', configs['data']['filename']),
-        configs['data']['train_test_split'],
-        configs['data']['columns']
+    data = LiveDataLoader(
+        dataframe=gld_dataframe,
+        split=0.8,
+        cols=['Open', 'Close', 'Volume']
     )
 
     model = Model()
-    model.build_model(configs)
-    x, y = data.get_train_data(
-        seq_len=configs['data']['sequence_length'],
-        normalise=configs['data']['normalise']
-    )
+    model.build_model()
+    model.model.summary()
 
     '''
 	# in-memory training
@@ -61,31 +44,36 @@ def main():
 	)
 	'''
     # out-of memory generative training
-    steps_per_epoch = math.ceil((data.len_train - configs['data']['sequence_length']) / configs['training']['batch_size'])
+    steps_per_epoch = math.ceil(((data.len_train - 30) / 32))
+
     model.train_generator(
         data_gen=data.generate_train_batch(
-            seq_len=configs['data']['sequence_length'],
-            batch_size=configs['training']['batch_size'],
-            normalise=configs['data']['normalise']
+            seq_len=30,
+            batch_size=32,
+            normalise=True
         ),
-        epochs=configs['training']['epochs'],
-        batch_size=configs['training']['batch_size'],
+        epochs=2,
+        batch_size=32,
         steps_per_epoch=steps_per_epoch,
-        save_dir=configs['model']['save_dir']
+        save_dir='saved_models'
     )
+
+
 
     x_test, y_test = data.get_test_data(
-        seq_len=configs['data']['sequence_length'],
-        normalise=configs['data']['normalise']
-    )
+        seq_len=30,
+        normalise=True)
 
-    predictions = model.predict_sequences_multiple(x_test, configs['data']['sequence_length'], configs['data']['sequence_length'])
-    # predictions = model.predict_sequence_full(x_test, configs['data']['sequence_length'])
-    # predictions = model.predict_point_by_point(x_test)
-
-    plot_results_multiple(predictions, y_test, configs['data']['sequence_length'])
-    # plot_results(predictions, y_test)
-
-
-if __name__ == '__main__':
-    main()
+    predictions_p = model.predict_point_by_point(x_test)
+    plot_results(predictions_p, y_test)
+    #
+    # # predicted data that are below 3 difference
+    # diff = abs(predictions_p[:,0] - y_test) < 3
+    #
+    # count = 0
+    # for element in diff:
+    #     if element == True:
+    #         count = count + 1
+    #
+    # # percentage of <5000 difference data in the whole testing data set
+    # percentage = count/len(diff)

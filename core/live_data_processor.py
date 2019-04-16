@@ -2,11 +2,10 @@ import math
 import numpy as np
 import pandas as pd
 
-class DataLoader():
+class LiveDataLoader():
     """A class for loading and transforming data for the lstm model"""
 
-    def __init__(self, filename, split, cols):
-        dataframe = pd.read_csv(filename)
+    def __init__(self, dataframe, split, cols):
         i_split = int(len(dataframe) * split)
         self.data_train = dataframe.get(cols).values[:i_split]
         self.data_test  = dataframe.get(cols).values[i_split:]
@@ -43,6 +42,7 @@ class DataLoader():
             x, y = self._next_window(i, seq_len, normalise)
             data_x.append(x)
             data_y.append(y)
+            a = 1
         return np.array(data_x), np.array(data_y)
 
     def generate_train_batch(self, seq_len, batch_size, normalise):
@@ -77,6 +77,7 @@ class DataLoader():
         for window in window_data:
             normalised_window = []
             for col_i in range(window.shape[1]):
+                abc = float(window[0, col_i]) - 1
                 normalised_col = [((float(p) / float(window[0, col_i])) - 1) for p in window[:, col_i]]
                 normalised_window.append(normalised_col)
             normalised_window = np.array(normalised_window).T # reshape and transpose array back into original multidimensional format
