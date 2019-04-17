@@ -16,9 +16,10 @@ class Model():
     def __init__(self):
         self.model = Sequential()
 
-    def load_model(self, filepath):
-        print('[Model] Loading model from file %s' % filepath)
-        self.model = load_model(filepath)
+    def load_model(self, file_name):
+        load_fname = os.path.join('model',file_name)
+        print('[Model] Loading model from file %s' % load_fname)
+        self.model = load_model(load_fname)
 
     def build_model(self):
         timer = Timer()
@@ -56,13 +57,13 @@ class Model():
         print('[Model] Training Completed. Model saved as %s' % save_fname)
         timer.stop()
 
-    def train_generator(self, data_gen, epochs, batch_size, steps_per_epoch, save_dir):
+    def train_generator(self, data_gen, epochs, batch_size, steps_per_epoch, save_file_name):
         timer = Timer()
         timer.start()
         print('[Model] Training Started')
         print('[Model] %s epochs, %s batch size, %s batches per epoch' % (epochs, batch_size, steps_per_epoch))
 
-        save_fname = os.path.join(save_dir, '%s-e%s.h5' % (dt.datetime.now().strftime('%d%m%Y-%H%M%S'), str(epochs)))
+        save_fname = os.path.join('model',save_file_name)
         callbacks = [
             ModelCheckpoint(filepath=save_fname, monitor='loss', save_best_only=True)
         ]
@@ -97,6 +98,17 @@ class Model():
                 curr_frame = np.insert(curr_frame, [window_size - 2], predicted[-1], axis=0)
             prediction_seqs.append(predicted)
         return prediction_seqs
+
+    def predict_next_sequence(self, data, window_size, prediction_len):
+        # Predict sequence of 50 steps before shifting prediction run forward by 50 steps
+        print('[Model] Predicting Next Sequences...')
+        predicted = []
+        curr_frame = data[0]
+        for j in range(prediction_len):
+            predicted.append(self.model.predict(curr_frame[newaxis, :, :])[0, 0])
+            curr_frame = curr_frame[1:]
+            curr_frame = np.insert(curr_frame, [window_size - 2], predicted[-1], axis=0)
+        return predicted
 
     def predict_sequence_full(self, data, window_size):
         # Shift the window by 1 new prediction each time, re-run predictions on new window
