@@ -5,6 +5,7 @@ import numpy as np
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.layers import Dense, Dropout, LSTM
 from keras.models import Sequential, load_model
+from keras.utils import plot_model
 from numpy import newaxis
 
 from core.utils import Timer
@@ -24,13 +25,14 @@ class Model():
     def build_model(self):
         timer = Timer()
         timer.start()
-        self.model.add(LSTM(100, input_shape=(29, 3), return_sequences=True))
+        self.model.add(LSTM(units=100, input_shape=(29, 3), return_sequences=True))
         self.model.add(Dropout(rate=0.2))
-        self.model.add(LSTM(100, return_sequences=True))
+        # self.model.add(LSTM(100, return_sequences=True))
         self.model.add(LSTM(100, return_sequences=False))
         self.model.add(Dropout(rate=0.2))
         self.model.add(Dense(1, activation='linear'))
-        self.model.compile(loss='mse', optimizer='adam')
+        self.model.compile(loss='mae', optimizer='adam')
+        # plot_model(model=self.model, show_layer_names=True, show_shapes=True, to_file="model.png")
         print('[Model] Model Compiled')
         timer.stop()
 
@@ -53,7 +55,6 @@ class Model():
             callbacks=callbacks
         )
         self.model.save(save_fname)
-
         print('[Model] Training Completed. Model saved as %s' % save_fname)
         timer.stop()
 
