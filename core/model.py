@@ -9,7 +9,7 @@ from keras.utils import plot_model
 from numpy import newaxis
 
 from core.utils import Timer
-
+from core.const import OUTPUT_TIME_STEP, NUMBER_OF_FEATURE, INPUT_TIME_STEP
 
 class Model():
     """A class for an building and inferencing an lstm model"""
@@ -18,19 +18,19 @@ class Model():
         self.model = Sequential()
 
     def load_model(self, file_name):
-        load_fname = os.path.join('model',file_name)
+        load_fname = os.path.join('./model',file_name)
         print('[Model] Loading model from file %s' % load_fname)
         self.model = load_model(load_fname)
 
     def build_model(self):
         timer = Timer()
         timer.start()
-        self.model.add(LSTM(units=100, input_shape=(29, 3), return_sequences=True))
+        self.model.add(LSTM(units=100, input_shape=(INPUT_TIME_STEP, NUMBER_OF_FEATURE), return_sequences=True))
         self.model.add(Dropout(rate=0.2))
         # self.model.add(LSTM(100, return_sequences=True))
         self.model.add(LSTM(100, return_sequences=False))
         self.model.add(Dropout(rate=0.2))
-        self.model.add(Dense(1, activation='linear'))
+        self.model.add(Dense(OUTPUT_TIME_STEP, activation='linear'))
         self.model.compile(loss='mae', optimizer='adam')
         # plot_model(model=self.model, show_layer_names=True, show_shapes=True, to_file="model.png")
         print('[Model] Model Compiled')
